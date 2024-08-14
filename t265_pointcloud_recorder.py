@@ -161,8 +161,43 @@ try:
 
     vis.poll_events()
     vis.update_renderer()
+    
+    # Open3D keyboard control
+    # Have to se the GLFW_KEY code, please refer to the link
+    # https://www.glfw.org/docs/latest/group__keys.html
+    
+    def key_exit(vis):
+        print('!!!!! EXIT !!!!!')
+        vis.destroy_window()
+        global esc_clicked
+        esc_clicked = True
+
+    vis.register_key_callback(256, key_exit) # esc key
+    
+    def key_save_pointcloud(vis):
+        print("Collecting depth")
+        global save_pointcloud
+        save_pointcloud = True
+        
+    vis.register_key_callback(32, key_save_pointcloud) # space key
+    
+    def key_stack_mode(vis):
+        print("stack")
+        global mode 
+        mode = "stack"
+        
+    vis.register_key_callback(83, key_stack_mode) # space key
+    
+    def key_overlay_mode(vis):
+        print("overlay")
+        global mode 
+        mode = "overlay"
+        
+    vis.register_key_callback(79, key_overlay_mode) # space key
 
     counter = 1
+    save_pointcloud = False
+    esc_clicked = False
     while True:
         # Check if new frames are available
         with frame_mutex:
@@ -218,16 +253,14 @@ try:
 
         # Handle key presses
         key = cv2.waitKey(30)
-        if key == ord('s'):
-            mode = "stack"
-        if key == ord('o'):
-            mode = "overlay"
-        if key == 32:  # Space key
-            print("Collecting depth")
+        
+        if save_pointcloud:
             o3d.io.write_point_cloud(f"./t265_depth_{counter:03d}.ply", pcd, write_ascii=True)
             counter += 1
-            key = ''
-        if key == ord('q') or cv2.getWindowProperty(WINDOW_TITLE, cv2.WND_PROP_VISIBLE) < 1:
+            save_pointcloud = False
+        if esc_clicked:
+            cv2.destroyAllWindows()
             break
+            
 finally:
     pipe.stop()
